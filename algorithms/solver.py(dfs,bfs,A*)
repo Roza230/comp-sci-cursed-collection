@@ -1,0 +1,244 @@
+import time
+import psutil # type: ignore
+from collections import deque
+import heapq
+import copy
+
+def move_R(cube):
+    # dummy move logic (replace with your actual R rotation)
+    return cube
+
+def move_U(cube):
+    return cube
+
+def move_F(cube):
+    return cube
+
+# Convert cube to hashable state (e.g., a string)
+def cube_to_state(cube):
+    return str(cube)
+
+# Check if the cube is solved
+def is_solved(cube):
+    # Dummy logic (replace with actual logic)
+    return False
+
+# 👇 This must be a list of (function, name) tuples
+all_moves = [
+    (move_R, "R"),
+    (move_U, "U"),
+    (move_F, "F"),
+  
+]
+
+# Import cube functions
+from algorithms.cube import cube_to_state, is_solved, all_moves
+
+def dfs(initial_state, max_depth=20):
+    """
+    Depth-First Search implementation for Rubik's Cube
+    Args:
+        initial_state: Dictionary representing initial cube state
+        max_depth: Maximum search depth to prevent infinite search
+    
+    Returns:
+        solution_moves: List of moves to solve the cube or None if not found
+        nodes_expanded: Number of nodes expanded during search
+        max_memory: Maximum memory usage in MB
+    """
+    start_time = time.time()
+    
+    # Track memory usage
+    process = psutil.Process()
+    initial_memory = process.memory_info().rss / (1024 * 1024)  # MB
+    max_memory = initial_memory
+    
+    # Initialize search
+    stack = [(initial_state, [], 0)]  # (state, moves, depth)
+    visited = set()
+    nodes_expanded = 0
+    
+    while stack:
+        current_state, moves, depth = stack.pop()
+        
+        # Check memory usage
+        current_memory = process.memory_info().rss / (1024 * 1024)
+        max_memory = max(max_memory, current_memory)
+        
+        # Check if solved
+        if is_solved(current_state):
+            end_time = time.time()
+            return {
+                'solution': moves,
+                'nodes_expanded': nodes_expanded,
+                'time_taken': end_time - start_time,
+                'max_memory': max_memory - initial_memory
+            }
+        
+        # Skip if we've seen this state or reached max depth
+        state_hash = cube_to_state(current_state)
+        if state_hash in visited or depth >= max_depth:
+            continue
+        
+        visited.add(state_hash)
+        nodes_expanded += 1
+        
+        for move_func, move_name in reversed(all_moves):
+            print(f"Trying move: {move_name}, move_func: {move_func}, type: {type(move_func)}")
+            new_state = move_func(current_state)  # move_func must be callable
+            new_moves = moves + [move_name]
+            stack.append((new_state, new_moves, depth + 1))
+    
+    end_time = time.time()
+    return {
+        'solution': None,
+        'nodes_expanded': nodes_expanded,
+        'time_taken': end_time - start_time,
+        'max_memory': max_memory - initial_memory
+    }
+
+def bfs(initial_state, max_depth=20):
+    """
+    Breadth-First Search implementation for Rubik's Cube
+    """
+    start_time = time.time()
+    
+    # Track memory usage
+    process = psutil.Process()
+    initial_memory = process.memory_info().rss / (1024 * 1024)  # MB
+    max_memory = initial_memory
+    
+    # Initialize search
+    queue = deque([(initial_state, [], 0)])  # (state, moves, depth)
+    visited = set()
+    nodes_expanded = 0
+    
+    while queue:
+        current_state, moves, depth = queue.popleft()
+        
+        # Check memory usage
+        current_memory = process.memory_info().rss / (1024 * 1024)
+        max_memory = max(max_memory, current_memory)
+        
+        # Check if solved
+        if is_solved(current_state):
+            end_time = time.time()
+            return {
+                'solution': moves,
+                'nodes_expanded': nodes_expanded,
+                'time_taken': end_time - start_time,
+                'max_memory': max_memory - initial_memory
+            }
+        
+        # Skip if we've seen this state or reached max depth
+        state_hash = cube_to_state(current_state)
+        if state_hash in visited or depth >= max_depth:
+            continue
+        
+        visited.add(state_hash)
+        nodes_expanded += 1
+        
+        # Add all possible moves to queue
+        if depth < max_depth:
+            for move_func, move_name in all_moves:
+                new_state = move_func(current_state)
+                new_moves = moves + [move_name]
+                queue.append((new_state, new_moves, depth + 1))
+    
+    end_time = time.time()
+    return {
+        'solution': None,
+        'nodes_expanded': nodes_expanded,
+        'time_taken': end_time - start_time,
+        'max_memory': max_memory - initial_memory
+    }
+
+def manhattan_distance_heuristic(cube):
+    """
+    A simple heuristic function for A* search
+    Calculates how "out of place" each piece is
+    """
+    # For simplicity, just count the mismatched pieces
+    # A more sophisticated implementation would calculate actual moves required
+    total_distance = 0
+    for face, grid in cube.items():
+        expected_color = {
+            'U': 'W',  # Up - White
+            'D': 'Y',  # Down - Yellow
+            'F': 'G',  # Front - Green
+            'B': 'B',  # Back - Blue
+            'L': 'O',  # Left - Orange
+            'R': 'R',  # Right - Red
+        }[face]
+        
+        for row in grid:
+            for cell in row:
+                if cell != expected_color:
+                    total_distance += 1
+    return total_distance
+
+def a_star(initial_state, max_depth=20):
+    """
+    A* Search implementation for Rubik's Cube
+    """
+    start_time = time.time()
+    
+    # Track memory usage
+    process = psutil.Process()
+    initial_memory = process.memory_info().rss / (1024 * 1024)  # MB
+    max_memory = initial_memory
+    
+    # Initialize search
+    initial_cost = manhattan_distance_heuristic(initial_state)
+    priority_queue = [(initial_cost, 0, 0, initial_state, [])]  # (f, g, tie_breaker, state, moves)
+    visited = {}  # state_hash -> best g-value found so far
+    nodes_expanded = 0
+    counter = 1  # tie breaker for states with same f-value
+    
+    while priority_queue:
+        f, g, _, current_state, moves = heapq.heappop(priority_queue)
+        
+        # Check memory usage
+        current_memory = process.memory_info().rss / (1024 * 1024)
+        max_memory = max(max_memory, current_memory)
+        
+        # Check if solved
+        if is_solved(current_state):
+            end_time = time.time()
+            return {
+                'solution': moves,
+                'nodes_expanded': nodes_expanded,
+                'time_taken': end_time - start_time,
+                'max_memory': max_memory - initial_memory
+            }
+        
+        # Skip if we've reached max depth
+        if g >= max_depth:
+            continue
+        
+        # Skip if we've found a better path to this state
+        state_hash = cube_to_state(current_state)
+        if state_hash in visited and visited[state_hash] <= g:
+            continue
+        
+        visited[state_hash] = g
+        nodes_expanded += 1
+        
+        # Add all possible moves to priority queue
+        for move_func, move_name in all_moves:
+            new_state = move_func(current_state)
+            new_moves = moves + [move_name]
+            new_g = g + 1
+            new_h = manhattan_distance_heuristic(new_state)
+            new_f = new_g + new_h
+            
+            counter += 1
+            heapq.heappush(priority_queue, (new_f, new_g, counter, new_state, new_moves))
+    
+    end_time = time.time()
+    return {
+        'solution': None,
+        'nodes_expanded': nodes_expanded,
+        'time_taken': end_time - start_time,
+        'max_memory': max_memory - initial_memory
+    }
