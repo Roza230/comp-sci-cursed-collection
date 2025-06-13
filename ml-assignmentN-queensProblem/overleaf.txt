@@ -1,0 +1,262 @@
+\documentclass[11pt,a4paper,twocolumn]{article}
+
+\usepackage[margin=1in, left=1in, right=1in, top=1in, bottom=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{pifont} % for tick/cross
+\usepackage{lipsum}
+\usepackage{titlesec}
+\usepackage{titling}
+\usepackage{fancyhdr}
+\usepackage{ragged2e}
+\usepackage[utf8]{inputenc}
+
+% Title setup
+\title{\textbf{Solving the N-Queens Problem with Exhaustive Search and Genetic Algorithms}}
+\author{
+\begin{tabular}{cc}
+\textbf{Roza Antonevici} & \textbf{Raja Hashim Ali} \\
+\textit{Software Engineering BSc} & \textit{Department of Business} \\
+University of Europe for Applied Sciences & University of Europe for Applied Sciences \\
+ML and Smart Systems & AI Research Group \\
+ \\
+ \\
+\end{tabular}
+}
+\date{}
+
+\setlength{\columnsep}{0.50cm} % space between two columns
+
+\begin{document}
+\setlength{\columnsep}{0.5cm}
+\maketitle
+\textbf{\textit{abstract--} The N‑Queens problem is a classic benchmark in combinatorial optimization and search algorithms, posing the challenge of placing N queens on an N×N chessboard such that none attack each other. Efficiently solving this problem is crucial as it mirrors real‐world constraint satisfaction tasks found in scheduling and resource allocation. Despite extensive research, a gap remains in comprehensive performance evaluations across exact and heuristic methods for varying board sizes. In this study, I implement and compare four algorithms: DFS, Greedy Hill Climbing with random restarts Simulated Annealing, and a Genetic Algorithm—across N = 10, 30, 50, 100, and 200. My results show that DFS solves N=10 nearly instantaneously (0.0012s) but fails beyond N=30 due to exponential time growth, while Hill Climbing succeeds up to N=30 with moderate runtime (5.8s). Simulated Annealing achieves solutions up to N=100 with robust performance (success rate 80 percent, average time 0.40s), whereas the Genetic Algorithm did not yield valid solutions for any tested N. These findings highlight a clear trade‑off between exactness and scalability. Our contribution lies in systematically quantifying this trade‑off and demonstrating the practical limitations of each method. This work guides future applications in optimization by revealing the most effective strategies for large, complex search spaces.}
+
+\begin{center}
+    \textbf{I. INTRODUCTION}
+\end{center}
+
+The N-Queens problem is a classic in combinatorial optimization, used to test algorithms like exhaustive search and genetic algorithms. It involves placing N Queens on a board so that no two attack each other. This problem helps evaluate algorithm performance on NP-complete tasks. Exhaustive search ensures accuracy but is slow, while genetic algorithms offer faster, approximate solutions where making it ideal for comparing efficiency and scalability.
+
+Today, the N-Queens problem is still used to benchmark modern heuristics and hybrid methods. It remains relevant for testing solutions to complex real-world problems like scheduling and resource allocation. 
+\begin{flushleft}
+    \textit{A. My Related Work} 
+\begin{flushleft}
+\setlength{\parskip}{1em}
+\begin{enumerate}[align=parleft, left=0pt, labelsep=1em]
+    \item \justifying Exhaustive DFS:
+Uses recursive backtracking with constraint pruning, tracks column and diagonal threats using sets, includes timeout to prevent long execution, evaluates nodes efficiently with early exits, good for small n, guaranteed to find a solution if time allows, not scalable for large n.
+    \item \justifying Greedy Hill Climbing:
+Starts from random states, minimizes conflicts by selecting best local move, uses random restarts to escape local minima, evaluates pairwise conflicts quickly, stops early if a solution is found, fast but incomplete, works well for large n with speed priority.
+    \item \justifying Simulated Annealing:
+Applies probabilistic descent with temperature decay, allows uphill moves early to escape local optima, swaps two positions to generate neighbors, reheats temperature if stuck, balances exploration and exploitation, not guaranteed to solve but robust for medium to large n.
+    \item \justifying Genetic Algorithm:
+Maintains a population of valid permutations, evolves solutions using tournament selection and PMX crossover, applies swap and inversion mutations, uses fitness based on conflict count, scalable and parallelizable, slower than others but effective for large n, not guaranteed to solve.
+\end{enumerate}
+\end{flushleft}
+\vspace{1em}
+      \textit{B. Gap analysis}
+\end{flushleft}
+\indent 
+
+Despite recent advances in Heurestic and Metahereustic approaches to the N-Queens problem, several key gaps remain. For genetic algorithms, research has explored novel crossover operators within small scale problems such as n=12 and hybridization with bitboards and Min Conflicts to improve performance, but still lack formally proven scalability to much larger n. Likewise, simulated annealing and local search methods are reliable on moderate boards, yet struggle to guarantee solutions as board size grows. 
+
+Recent work introduces swarm-based Metaheurestics like 'Brain Drain Optimization' and quantum inspired methods, but those studies are preliminary and lack comparative benchmarks against established algorithms at scale. Furthermore, while parallelization efforts such as GPU assisted fitness evaluation show massive speedups, they rarely integrate with complete search strategies to ensure solution success. Thus, there is a clear need for large scale, hybrid, adaptive and parallel frameworks, formally evaluated over comprehensive benchmarks, that offer both high performance and solution guarantees for the N-Queens problem in modern computing environments.
+
+\begin{table*}[h]
+\centering
+\caption{Performance Summary of N-Queens Algorithms (N = 10 to 200)}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+\textbf{Algorithm} & \textbf{Success Rate} & \textbf{Avg Time (s)} & \textbf{Avg Memory} & \textbf{Max N Solved} & \textbf{Timeouts} \\
+\midrule
+Optimized DFS           & 20.0\% & 0.0012 & 0.0 MB & 10  & 4/5 \\
+Hill Climbing           & 40.0\% & 2.9147 & 0.0 MB & 30  & 3/5 \\
+Simulated Annealing     & 80.0\% & 0.4048 & 0.0 MB & 100 & 1/5 \\
+Genetic Algorithm       & 0.0\%  & –      & –      & 0   & 5/5 \\
+\bottomrule
+\end{tabular}%
+}
+\end{table*}
+
+\begin{flushleft}
+    \textit{C. Problem Statement} 
+\end{flushleft}
+\indent
+
+The N-Queens problem involves placing N queens on an NxN chessboard so that no two queens threaten each other (i.e., no two in the same row, column or diagonal). The goal is to find valid configurations and understand the computational complexity as it increases.
+
+The objective of this study is to use Exhaustive Search using DFS or BFS to explore all possible queen placements. Guaranteed to find a solution but becomes slow as N grows, make Genetic Algorithm use evolutionary techniques such as selection, crossover or mutation to find solutions more efficiently for large N, but not always guaranteed. And in the end to compare both methods for accuracy, speed, and scalability using N=10, 30, 50, 100, and 200 as the test cases. 
+
+\begin{flushleft}
+    \textit{D. Novelty of My Work}
+\end{flushleft}
+
+A key contribution of this study is the performance profiling across realistic board sizes, highlighting the strengths and limitations of each algorithm in solving large scale constraint satisfaction problems. 
+
+My analysis demonstrates that Simulated Annealing provides the most reliable performance for higher N, while exhaustive methods quickly become impractical beyond small board sizes. 
+
+\begin{flushleft}
+    \textit{E. My Solutions}
+\end{flushleft}
+
+In this report, I implement and evaluate 4 algorithms to solve the N-Queens problem: Optimized Depth-First Search (DFS), Hill Climbing, Simulated Annealing and Genetic Algorithm. Each method is tested across increasing board sizes = 10,30,50,100,200 and compared in terms of success rate, execution time and scalability. The goal is to identify which algorithm performs best as the problem size increases and to understand their respective trade offs in efficiency and reliability.
+
+Simulated Annealing achieved the highest success rate and scalability, while DFS was only effective for small board sizes. Genetic Algorithm and Hill Climbing struggled with consistency on larger boards. 
+
+\begin{center}
+    \textbf{II. METHODOLOGY}
+\end{center}
+
+\begin{flushleft}
+    \textit{A. Overall Workflow}
+\end{flushleft}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{.png}
+    \caption{Workflow for solving N-Queens problem using, DFS, Climbing Hill, Annealing Simulation and Genetic Algorithm}
+\end{figure}
+
+
+Figure 1 shows the workflow for solving the N-Queens problem using Depth-first Search (DFS), Genetic Algorithm, Hill Climbing, and Simulated Annealing. The process starts by selecting the algorithm to apply. For DFS, the algorithm initializes parameters and begins with an empty board, placing queens one at a time while backtracking when conflicts arise where queens can attack each other until a solution is found or all options are exhausted.
+
+For the Genetic Algorithm, a population of candidate solutions is created and evolved through selection, crossover, and mutation to reduce conflicts. Hill Climbing iteratively improves a single solution by making local changes to decrease conflicts, while Simulated Annealing explores the solution space more broadly by sometimes accepting worse solutions to escape local optima, gradually reducing this acceptance as it “cools.” Each method offers a unique strategy to find a valid arrangement of queens on the board.
+ 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{figure2.jpeg}
+    \caption{Overall Workflow}
+\end{figure}
+
+\begin{center}
+    \textbf{III. RESULTS}
+\end{center}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\linewidth]{WhatsApp Image 2025-06-12 at 12.07.31.jpeg}
+    \caption{Hierarchical state transitions in the 10-Queens problem, showing queen placements from an empty board (Figure 1) to potential solutions through successive valid moves.}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.80\linewidth]{testingN10.png}
+    \caption{Results N=10}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.80\linewidth]{testingN30.png}
+    \caption{Results N = 30}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.80\linewidth]{testingN50.png}
+    \caption{Results N = 50}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.80\linewidth]{testingN100.png}
+    \caption{Results N = 100}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.80\linewidth]{testingN200.png}
+    \caption{Results N = 200}
+\end{figure}
+\
+\begin{figure}
+    \centering
+    \includegraphics[width=0.90\linewidth]{performance.summary.png}
+    \caption{Performance Summary}
+\end{figure}
+
+\begin{flushleft}
+    \textit{A. Solving the N-Queens Problem with Depth-First Search (DFS)}
+\end{flushleft}
+
+The DFS algorithm was used to systematically explore the N-Queens solution space by placing queens row by row and backtracking on conflicts (Figure 3). For small boards (N  10), it efficiently found all valid solutions, although the computation time grew rapidly with larger N. 
+
+Figures 3,4,5,6, and 7 summarize the results for DFS, hill climbing, running simulation annealing, and genetic algorithm for board sizes 10,30,50,100, and 200. They provide 2 main metrics and one secondary metric as so: time taken to implement the solutions and memory usage, and the secondary metric showing whether the analysation was either timeout and how many nodes were explored.
+
+\begin{center}
+    \textbf{IV. CONCLUSION}
+\end{center}
+
+The experimental results reveal significant differences in the performance and scalability of the 4 algorithms with increasing board sizes (N=10-200):
+
+\begin{flushleft}
+    \textit{Depth-First-Search(DFS)}
+\end{flushleft}
+Succeeded only at N=10, with an impressive runtime of 0.0012s and low memory usage. However, it lapsed in all the larger cases and explored more than 147 million nodes. This reflects its exhaustive nature and lack of optimization, making it impractical for larger boards due to exponential growth in the search space. 
+
+\begin{flushleft}
+    \textit{Hill Climbing}
+\end{flushleft}
+Showed moderate success (40 percent) solving up to N=30. Its efficiency (2.91s average) is offset by timeouts in larger N, caused by the algorithm getting stuck in local minima. This happens more frequently on larger boards where the probability of non-promising initial states increases. 
+
+\begin{flushleft}
+    \textit{Simulated Annealing}
+\end{flushleft}
+Achieved the best overall performance with an 80 percent success rate efficiently solving up to N=100. Its probabilistic jumps and reheating mechanism helped escape local optima, maintaining strong performance even on complex boards. It only failed at N = 200 where the large solution space caused run time issues likely due to buffering delays or insufficient temperature scheduling.
+
+\begin{flushleft}
+    \textit{Genetic Algorithm}
+\end{flushleft}
+Consistently failed across all N, likely due to inadequate selection pressure, poor mutation/crossover diversity, or insufficient generations. Despite relatively fast runtimes up to 6s, it could not converge to valid solutions suggesting that its operators were not well tuned for constraint-heavy problems like N-Queens.
+
+\begin{flushleft}
+    \textit{Final Thoughts}
+\end{flushleft}
+In conclusion, this report compared 4 different algorithms—Depth-First Search (DFS), Hill Climbing, Simulated Annealing, and Genetic Algorithm—on the N-Queens problem to see how well they scale and perform as N gets larger.
+
+\textbf{In the end} this project gave me more than just algorithm comparisons as it showed me what it's actually like to run and evaluate algorithms in a real world setting, with time constraints, unexpected slowdowns, and design trade offs. I went in thinking I’d just compare run times and results, but I came out of it with a much deeper understanding of what makes an algorithm practical and not just theoretically correct.
+One of the biggest takeaways for me was how important it is to set realistic time limits. At first, I let the Genetic Algorithm run freely and was shocked that it could take 40 to 60 minutes to attempt a single solution. That was the turning point: I realized that no matter how "cool" or biologically inspired an algorithm is, it’s not useful if it can’t finish in a reasonable time. So I added strict timeouts to keep things efficient and comparable. That experience made me think more like a real engineer, finding solutions before the deadline. 
+Simulated Annealing ended up being the algorithm that impressed me the most. It didn’t get stuck as easily as Hill Climbing, and it scaled way better than DFS. Thanks to its randomness and ability to “jump out” of local optima, it was the only algorithm that consistently solved larger boards (like N=50) or even N=100 within the time limit. So later my laptop doesn't overheat and doesn't fly away with all the fanning. It was fun.
+So yes this project was about algorithms, but it was also about confidence. I went in trying to solve for queens, and somewhere along the way, I became one.
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{runtimecomparison.jpeg}
+    \caption{Runtime Comparison}
+\end{figure}
+
+\begin{center}
+    \textbf{V. REFERENCES}
+\end{center}
+
+\begin{itemize}
+    \item [1] P. Garg, S. S. Chauhan Gonder, and D. Singh, “Hybrid crossover operator in genetic algorithm for solving n-queens problem,” in Soft Computing: Theories and Applications: Proceedings of SoCTA 2021. Springer, 2022, pp. 91–99.
+\end{itemize}
+
+\begin{itemize}
+    \item [2] C. Jianli, C. Zhikui, W. Yuxin, and G. He, “Parallel genetic algorithm for n-queens problem based on message passing interface-compute unified device architecture,” Computational Intelligence, vol. 36, no. 4, pp. 1621–1637, 2020.
+\end{itemize}
+
+\begin{itemize}
+    \item [3] S. Sharma and V. Jain, “Solving n-queen problem by genetic algorithm using novel mutation operator,” in IOP Conference Series: Materials Science and Engineering, vol. 1116, no. 1. IOP Publishing, 2021, p. 012195.
+\end{itemize}
+
+\begin{itemize}
+    \item [4] O. K. Majeed, R. H. Ali, A. Z. Ijaz, N. Ali, U. Arshad, M. Imad, S. Nabi, J. Tahir, and M. Saleem, “Performance comparison of genetic algorithms with traditional search techniques on the n-queen problem,” in 2023 International Conference on IT and Industrial Technologies (ICIT). IEEE, 2023, pp. 1–6.
+\end{itemize}
+
+\begin{itemize}
+    \item [5] Zur Luria and Michael Simkin, “A lower bound for the n‑queens problem,” arXiv preprint arXiv:2105.11431, May, 2021.
+\end{itemize}
+
+\begin{itemize}
+    \item S. Glock, D. M. Correia, and B. Sudakov, “The n‑queens completion problem,” arXiv preprint arXiv:2111.11402, Nov, 2021
+\end{itemize}
+
+\end{document}
+ 
