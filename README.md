@@ -18,8 +18,8 @@
 - just vibes :)
 
 # Stack
--Python cause it's also the year of the Snake (2025 Chinese Zodiac Sign)
--LaTeX
--Graphs because apparently that's still popular
--and a lot of frustration
+- Python cause it's also the year of the Snake (2025 Chinese Zodiac Sign)
+- LaTeX
+- Graphs because apparently that's still popular
+- and a lot of frustration
 
